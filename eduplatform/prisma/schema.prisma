@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("STUDENT") // "STUDENT" | "TEACHER"
+  avatarUrl    String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lessons     Lesson[]
+  comments    Comment[]
+  enrollments Enrollment[]
+}
+
+model Lesson {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  videoUrl     String
+  thumbnailUrl String?
+  duration     Int?
+  isPublished  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teacherId String
+  teacher   User   @relation(fields: [teacherId], references: [id])
+  courseId   String?
+  course    Course? @relation(fields: [courseId], references: [id])
+
+  comments Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  lessonId String
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentReplies")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  coverUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lessons     Lesson[]
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  enrolledAt DateTime @default(now())
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  courseId  String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
